@@ -1,0 +1,253 @@
+
+<html>
+
+<head>
+<title>HackOn-pad</title>
+<link rel="shortcut icon" href="https://hackon.es/assets/img/icons_download/escudo.png" type="image/x-icon">
+<script src="./js/jquery.min.js"></script>
+<script type="text/javascript" src="./js/angular.min.js"></script>
+<link href="./css/bootstrap.min.css" rel="stylesheet" id="bootstrap-css">
+<script src="./js/bootstrap.min.js"></script>
+<link href="index.css" rel="stylesheet" id="inline-css">
+<!------ Include the above in your HEAD tag ---------->
+
+</head>
+
+<body ng-app="rootApp">
+
+<div class="sidenav">
+         <div class="login-main-text">
+            <h2><a href="home.html" style="color: white; text-decoration: none;">HackOn-pad</a><br> Tus apuntes</h2>
+            <p>Crea y maneja tus apuntes desde aquí</p>
+         </div>
+      </div>
+      <div class="main">
+         <div class="col-md-6 col-sm-12">
+
+                
+                <br>
+                <br>
+                <h2>Mis apuntes</h2>
+                        <div id="myApp1">
+                                <div ng-controller="MyController1">
+                       <form ng-submit="save($element.action)">
+                        <p>Los apuntes pueden ser de tipo:</p>
+                        <ul>
+                            <li>note</li>
+                            <li>reminder</li>
+                            <li>list</li>
+                            <li>secret</li>
+                            <li>public (por defecto)</li>
+                        </ul>
+                        Nombre: <input type="text" name="name" ng-model="name" > <br>
+                        <br>
+                        Tipo: <input type="text" name="Ntype" ng-model="Ntype" >
+                        <br><br>
+                        <button type="submit" class="btn btn-black" ng-click="SendData1()">Crear</button>
+                        <button type="submit" class="btn btn-black" ng-click="SendData2()">Modificar</button>
+                        <button type="submit" class="btn btn-black" ng-click="SendData3()">Eliminar</button>
+                </form>
+                <br>
+            <textarea rows="5" cols="80" name="body" ng-model="body" placeholder="Escribe tus pensamientos..." form="usrform">
+            Escribe tus pensamientos...</textarea>
+            <br>
+            <br>
+            {{ DataResponse }}
+                </div>
+            </div>
+            
+                    <br>
+                    <br>
+
+  
+                    <div id="myApp2">
+                            <div ng-controller="MyController2">
+                                <h2>Tus apuntes:</h2>
+                                <br>
+                                <table>
+                                        <tr>
+                                            <th>Nombre</th>
+                                            <th>Contenido</th>
+                                            <th>Tipo</th>
+                                        </tr>
+                                        <tr ng-repeat="item in items" >
+                                            <td ng-repeat="(key, val) in item" ng-if="key == 'name'">{{val}} </td>
+                                            <td ng-repeat="(key, val) in item" ng-if="key == 'body'">{{val}} </td>
+                                            <td ng-repeat="(key, val) in item" ng-if="key == 'type'">{{val[0]}} </td>
+                                        </tr>
+                                </table>
+
+                        </div>
+                </div>
+
+
+
+
+         </div>
+
+      </div>
+
+      <script type="text/javascript">
+        var rootApp = angular.module('rootApp', ['myApp1','myApp2']);
+
+        var myApp1 = angular.module('myApp1', []);
+        myApp1.controller('MyController1', function ($scope, $http, $window,$timeout) {
+            $scope.SendData1 = function () {
+            var post = $http({
+                method: "POST",
+                url: "/api/v2/notes",
+                dataType: 'json',
+                data: { name: $scope.name, body: $scope.body, type: $scope.Ntype },
+                headers: { "Content-Type": "application/json" },
+                headers: {'Authorization': 'Bearer ' + localStorage.getItem('JWTSessionID') }
+            });
+ 
+            post.success(function (data, status) {
+                if (status == 200) {
+                    $scope.DataResponse = data.name + ' Note created successfully!';
+                    $scope.callAtTimeout = function() {
+                                window.location = "notes.html"
+                            }
+                            $timeout( function(){ $scope.callAtTimeout(); }, 2000);
+                }
+
+            });
+ 
+            post.error(function (data, status) {
+                $scope.DataResponse = data.errors;
+            });
+        }
+        $scope.SendData2 = function () {
+                var get = $http({
+                    method: "GET",
+                    url: "/api/v2/notes",
+                    dataType: 'json',
+                    headers: { "Content-Type": "application/json" },
+                    headers: {'Authorization': 'Bearer ' + localStorage.getItem('JWTSessionID') }
+    
+                });
+    
+                get.success(function (data, status) {
+                    result = {}
+                    for(var i = 0; i < data.length; i++) {
+                         obj = data[i];
+                        result[obj.name] = obj._id;
+                    }
+
+                    if (result.hasOwnProperty($scope.name) === true) {
+
+                        var put = $http({
+                            method: "PUT",
+                            url: "/api/v2/notes/" + $scope.name,
+                            dataType: 'json',
+                            headers: { "Content-Type": "application/json" },
+                            headers: {'Authorization': 'Bearer ' + localStorage.getItem('JWTSessionID') },
+                            data: { name: $scope.name, body: $scope.body},
+                        });
+
+                        put.success(function (data, status) {
+                            $scope.DataResponse = 'Note '  + $scope.name + ' Updated'
+                            $scope.callAtTimeout = function() {
+                                window.location = "notes.html"
+                            }
+
+                            $timeout( function(){ $scope.callAtTimeout(); }, 2000);
+                        });
+                        put.error(function (data, status) {
+                            $scope.DataResponse = 'Note was not updated'
+                        });
+
+                    } else {
+                        $scope.DataResponse = 'Note not found'
+                    }
+                    
+                });
+     
+                get.error(function (data, status) {
+                    return null;
+                });
+        
+        }
+
+        $scope.SendData3 = function () {
+                var get = $http({
+                    method: "GET",
+                    url: "/api/v2/notes",
+                    dataType: 'json',
+                    headers: { "Content-Type": "application/json" },
+                    headers: {'Authorization': 'Bearer ' + localStorage.getItem('JWTSessionID') }
+    
+                });
+    
+                get.success(function (data, status) {
+                    result = {}
+                    for(var i = 0; i < data.length; i++) {
+                         obj = data[i];
+                        result[obj.name] = obj._id;
+                    }
+
+                    if (result.hasOwnProperty($scope.name) === true) {
+                        var put = $http({
+                            method: "DELETE",
+                            url: "/api/v2/notes/" + $scope.name,
+                            dataType: 'json',
+                            headers: { "Content-Type": "application/json" },
+                            headers: {'Authorization': 'Bearer ' + localStorage.getItem('JWTSessionID') }
+                        });
+
+                        put.success(function (data, status) {
+                            $scope.DataResponse = 'Note '  + $scope.name + ' Deleted'
+                            $scope.callAtTimeout = function() {
+                                window.location = "notes.html"
+                            }
+
+                            $timeout( function(){ $scope.callAtTimeout(); }, 2000);
+                        });
+                        put.error(function (data, status) {
+                            $scope.DataResponse = 'Note was not deleted'
+                        });
+
+                    } else {
+                        $scope.DataResponse = 'Note not found'
+                    }
+                    
+                });
+     
+                get.error(function (data, status) {
+                    return null;
+                });
+        
+        }
+      
+    
+        });
+
+        var myApp2 = angular.module('myApp2', []);
+        myApp2.controller('MyController2', function ($scope, $http, $window) {
+            getFromServer();
+            function getFromServer() {
+                var get = $http({
+                    method: "GET",
+                    url: "/api/v2/notes",
+                    dataType: 'json',
+                    headers: { "Content-Type": "application/json" },
+                    headers: {'Authorization': 'Bearer ' + localStorage.getItem('JWTSessionID') }
+    
+                });
+    
+                get.success(function (data, status) {
+                    $scope.items = data;
+                    console.log(data)
+                });
+     
+                get.error(function (data, status) {
+                    $scope.items = null;
+                });
+            
+            }
+    
+        });
+    
+     </script>
+</body>
+     </html>

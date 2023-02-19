@@ -1,0 +1,150 @@
+<head>
+   <title>HackOn-pad</title>
+   <link rel="shortcut icon" href="https://hackon.es/assets/img/icons_download/escudo.png" type="image/x-icon">
+   <script src="static/jquery-1.11.1.min.js"></script>
+   <script type="text/javascript" src="static/angular.js"></script>
+   <link href="static/bootstrap.min.css" rel="stylesheet" id="bootstrap-css">
+   <script src="static/bootstrap.min.js"></script>
+   <link href="index.css" rel="stylesheet" id="inline-css">
+   <!------ Include the above in your HEAD tag ---------->
+
+</head>
+
+<body>
+   <div class="sidenav">
+      <div class="login-main-text">
+         <h2><a href="home.html" style="color: white; text-decoration: none;">HackOn-pad</a><br> Administración</h2>
+         <p>Espero que seas admin, por que si no tenemos un problema...</p>
+         <p></p>
+      </div>
+   </div>
+   <div class="main">
+      <div class="col-md-6 col-sm-12">
+         <div class="login-form">
+            <div ng-app="app" ng-controller="MyController">
+               <h2>HackOn-pad User Data</h2>
+               <p>User Information: {{ ResponseMessage  }}</p>
+
+               <p>Search HackOn-pad Users: </p>
+               Enter Username: <input type="text" name="name" ng-model="name" placeholder="User Name"> <br>
+               <button type="submit" class="btn btn-black" ng-click="SendData1()">Search</button>
+               <br>
+               <br>
+               <div ng-bind-html-unsafe="myWelcome"></div>
+               <p>System Information: {{ SysMessage  }}</p>
+            </div>
+         </div>
+      </div>
+      <p>
+         <button class="btn btn-black" id="send">Show Your JWT Token</button>
+      </p>
+      <iframe id="receiver" src="/receiver.html" width="700" height="60">
+         <p>Your browser does not support iframes.</p>
+      </iframe>
+      <script src="static/userdisplay.js"></script>
+
+
+
+   </div>
+
+
+
+   <script type="text/javascript">
+
+
+      var app = angular.module('app', [])
+      app.controller('MyController', function ($scope, $http, $window) {
+         getFromServer();
+         function getFromServer() {
+            var get = $http({
+               method: "GET",
+               url: "/api/v2/users/checkadmin",
+               dataType: 'json',
+               headers: { "Content-Type": "application/json" },
+               headers: { 'Authorization': 'Bearer ' + localStorage.getItem('JWTSessionID') }
+
+            });
+
+            get.success(function (data, status) {
+               if (data.Success) {
+                  $scope.ResponseMessage = data.Success
+                  var adUrl = data.AdminURL
+                  getSysInfo();
+
+
+
+               } else if (data.Error) {
+                  var user = data.User
+                  $scope.ResponseMessage = data.Error
+                  window.location = "home.html#" + user
+
+               }
+
+               get.error(function (data, status) {
+                  $scope.ResponseMessage = 'Authentication Error';
+               });
+
+            });
+
+         }
+
+         function getSysInfo() {
+            var get = $http({
+               method: "GET",
+               url: "/api/v2/sysinfo/uname",
+               dataType: 'json',
+               headers: { "Content-Type": "application/json" },
+               headers: { 'Authorization': 'Bearer ' + localStorage.getItem('JWTSessionID') }
+
+            });
+
+            get.success(function (data, status) {
+               $scope.SysMessage = data;
+            });
+
+         }
+
+
+
+         $scope.SendData1 = function () {
+            var post = $http({
+               method: "POST",
+               url: "/HackOn-paduserservice",
+               dataType: 'xml',
+               data: `<soapenv:Envelope xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:urn="urn:examples:usernameservice">
+   <soapenv:Header/>
+   <soapenv:Body>
+      <urn:Username soapenv:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/">
+         <username xsi:type="xsd:string">` + $scope.name + `</username>
+      </urn:Username>
+   </soapenv:Body>
+</soapenv:Envelope>`,
+               headers: { "Content-Type": "application/xml" },
+               headers: { 'Authorization': 'Bearer ' + localStorage.getItem('JWTSessionID') }
+            });
+
+            post.success(function (data, status) {
+               if (status == 200) {
+                  var xmlDoc = $.parseXML(data)
+                  $xml = $(xmlDoc),
+                     $value = $xml.find("username");
+                  var result = $value.text();
+                  $scope.myWelcome = result
+               }
+
+            });
+
+            post.error(function (data, status) {
+               $scope.myWelcome = data.errors;
+            });
+         }
+
+      });
+
+   </script>
+
+
+</body>
+
+
+<!-- get all user data API functionality currently disabled-->

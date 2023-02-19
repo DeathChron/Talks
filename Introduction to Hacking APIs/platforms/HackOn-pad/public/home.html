@@ -1,0 +1,83 @@
+<title>HackOn-pad</title>
+<link rel="shortcut icon" href="https://hackon.es/assets/img/icons_download/escudo.png" type="image/x-icon">
+<script src="./js/jquery.min.js"></script>
+<script type="text/javascript" src="./js/angular.min.js"></script>
+<link href="./css/bootstrap.min.css" rel="stylesheet" id="bootstrap-css">
+<script src="./js/bootstrap.min.js"></script>
+<link href="index.css" rel="stylesheet" id="inline-css">
+<!------ Include the above in your HEAD tag ---------->
+
+
+
+<div class="sidenav">
+   <div class="login-main-text">
+      <h2><a href="home.html" style="color: white; text-decoration: none;">HackOn-pad</a><br> Página principal</h2>
+      <p>Accede a las páginas de apuntes</p>
+      <p></p>
+   </div>
+</div>
+<div class="main">
+   <div class="col-md-6 col-sm-12">
+      <div class="login-form">
+         <div ng-app="app" ng-controller="MyController">
+            <script>
+               var url = window.location.href; var hash = url.substring(url.indexOf('#') + 1);
+               document.write('Bienvenido <b>' + hash + '</b>');
+            </script>
+             <p>HackOn-pad Release: {{ ResponseMessage  }}</p>
+            <hr>
+            <div>
+               Páginas interesantes:<br>
+               <a href="notes.html">Apuntes</a><br>
+               <a href="search.html">Apuntes públicos</a><br>
+               <!-- <a href="admin.html">Admin</a><br> -->
+               <a href="passphrasegen.html">Generador de contraseñas</a><br>
+            </div>
+            
+         </div>
+      </div>
+      
+      <br><br><br><br><br><br>
+      <script>
+         document.write(`<a href="/api/v2/users/logout/${document.domain}">Logout</a>`);
+      </script>
+   </p>
+   
+   </div>
+
+</div>
+
+
+
+<script type="text/javascript">
+
+
+   var app = angular.module('app', [])
+   app.controller('MyController', function ($scope, $http, $window) {
+      getFromServer();
+      function getFromServer() {
+         var get = $http({
+            method: "GET",
+            url: "/api/v2/release/0.0.1",
+            dataType: 'json',
+            headers: { "Content-Type": "application/json" }
+
+         });
+
+         get.success(function (data, status) {
+            if (data) {
+               $scope.ResponseMessage = data;
+
+      }
+   });
+
+
+   }
+
+});
+</script>
+
+
+</body>
+
+</html>
